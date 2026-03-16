@@ -1,4 +1,9 @@
-const { kv } = require('@vercel/kv');
+const { Redis } = require('@upstash/redis');
+
+const redis = new Redis({
+    url: process.env.KV_REST_API_URL,
+    token: process.env.KV_REST_API_TOKEN,
+});
 
 const DEFAULT_DATA = {
     title: 'ตารางเวรงาน',
@@ -44,11 +49,12 @@ const DEFAULT_DATA = {
 
 module.exports = async function handler(req, res) {
     if (req.method === 'GET') {
-        let data = await kv.get('schedule');
+        let data = await redis.get('schedule');
         if (!data) {
-            await kv.set('schedule', DEFAULT_DATA);
+            await redis.set('schedule', JSON.stringify(DEFAULT_DATA));
             data = DEFAULT_DATA;
         }
+        if (typeof data === 'string') data = JSON.parse(data);
         return res.json(data);
     }
 
@@ -57,7 +63,7 @@ module.exports = async function handler(req, res) {
         if (!data || !data.people) {
             return res.status(400).json({ error: 'Invalid data' });
         }
-        await kv.set('schedule', data);
+        await redis.set('schedule', JSON.stringify(data));
         return res.json({ success: true });
     }
 

@@ -1,4 +1,9 @@
-const { kv } = require('@vercel/kv');
+const { Redis } = require('@upstash/redis');
+
+const redis = new Redis({
+    url: process.env.KV_REST_API_URL,
+    token: process.env.KV_REST_API_TOKEN,
+});
 
 const DEFAULT_DATA = {
     title: 'ตารางเวรงาน',
@@ -44,7 +49,7 @@ const DEFAULT_DATA = {
 
 module.exports = async function handler(req, res) {
     if (req.method === 'POST') {
-        await kv.set('schedule', DEFAULT_DATA);
+        await redis.set('schedule', JSON.stringify(DEFAULT_DATA));
         return res.json(DEFAULT_DATA);
     }
     res.status(405).json({ error: 'Method not allowed' });

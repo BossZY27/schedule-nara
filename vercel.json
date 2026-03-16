@@ -1,4 +1,8 @@
 {
+  "framework": null,
+  "installCommand": "npm install",
+  "buildCommand": "",
+  "outputDirectory": "public",
   "rewrites": [
     { "source": "/api/schedule", "destination": "/api/schedule" },
     { "source": "/api/reset", "destination": "/api/reset" }
