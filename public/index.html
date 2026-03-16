@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตารางเวรงาน</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #FFF8F0;
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* ===== Toolbar ===== */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding: 16px 20px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .toolbar-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: 2px solid transparent;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: border-color 0.2s;
+        }
+
+        .toolbar-title:hover {
+            border-color: #ddd;
+        }
+
+        .toolbar-title-input {
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: 'Sarabun', sans-serif;
+            border: 2px solid #4CAF50;
+            padding: 4px 8px;
+            border-radius: 8px;
+            outline: none;
+            width: 300px;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            opacity: 0.85;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: #fff;
+        }
+
+        .btn-export {
+            background: #2196F3;
+            color: #fff;
+        }
+
+        .btn-reset {
+            background: #9E9E9E;
+            color: #fff;
+        }
+
+        .btn-danger {
+            background: #F44336;
+            color: #fff;
+        }
+
+        .btn-small {
+            font-size: 0.8rem;
+            padding: 4px 10px;
+        }
+
+        .btn-icon {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .btn-icon:hover {
+            opacity: 0.8;
+        }
+
+        /* ===== Schedule Display (export area) ===== */
+        #schedule-display {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        /* ===== Person Card ===== */
+        .person-card {
+            background: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: #fff;
+            gap: 10px;
+        }
+
+        .card-header-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.25);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .card-header-badge .dot {
+            width: 10px;
+            height: 10px;
+            background: #fff;
+            border-radius: 50%;
+        }
+
+        .card-header-name {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .card-header-name-input {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border: none;
+            background: rgba(255,255,255,0.4);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 8px;
+            outline: none;
+            width: 120px;
+        }
+
+        .card-header-name-input::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .card-header-spacer {
+            flex: 1;
+        }
+
+        .card-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .card-controls .btn-icon {
+            background: rgba(255,255,255,0.25);
+            color: #fff;
+            font-size: 0.85rem;
+        }
+
+        .card-controls .btn-icon:hover {
+            background: rgba(255,255,255,0.4);
+        }
+
+        /* ===== Color Picker Popup ===== */
+        .color-picker-popup {
+            position: absolute;
+            background: #fff;
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            z-index: 100;
+            width: 200px;
+        }
+
+        .color-swatch {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: transform 0.15s, border-color 0.15s;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.15);
+        }
+
+        .color-swatch.active {
+            border-color: #333;
+        }
+
+        /* ===== Schedule Table ===== */
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .schedule-table th {
+            padding: 10px 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-align: center;
+            border-bottom: 2px solid #eee;
+        }
+
+        .schedule-table th:first-child {
+            text-align: left;
+            padding-left: 20px;
+            width: 180px;
+        }
+
+        .schedule-table td {
+            padding: 12px 8px;
+            text-align: center;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: top;
+        }
+
+        .schedule-table td:first-child {
+            text-align: left;
+            padding-left: 20px;
+            font-weight: 600;
+        }
+
+        .schedule-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .task-name {
+            cursor: pointer;
+            display: block;
+        }
+
+        .task-name:hover {
+            text-decoration: underline;
+        }
+
+        .task-name-input {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: 2px solid #4CAF50;
+            padding: 2px 6px;
+            border-radius: 6px;
+            outline: none;
+            width: 140px;
+        }
+
+        .task-time {
+            font-size: 0.75rem;
+            color: #999;
+            display: block;
+        }
+
+        .day-cell {
+            cursor: pointer;
+            user-select: none;
+            min-width: 60px;
+            transition: background 0.15s;
+            border-radius: 4px;
+        }
+
+        .day-cell:hover {
+            background: #f5f5f5;
+        }
+
+        .day-check {
+            font-size: 1.2rem;
+            font-weight: 700;
+            display: block;
+        }
+
+        .day-dash {
+            font-size: 1rem;
+            color: #ccc;
+            display: block;
+        }
+
+        .time-display {
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        .time-display:hover {
+            text-decoration: underline;
+        }
+
+        .time-input {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.7rem;
+            border: 1px solid #ccc;
+            padding: 1px 4px;
+            border-radius: 4px;
+            outline: none;
+            width: 80px;
+            text-align: center;
+        }
+
+        /* Task row controls */
+        .task-row {
+            position: relative;
+        }
+
+        .task-delete-btn {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: none;
+            background: #F44336;
+            color: #fff;
+            font-size: 0.7rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .task-row:hover .task-delete-btn {
+            opacity: 1;
+        }
+
+        /* Add task row */
+        .add-task-row td {
+            padding: 8px 20px;
+        }
+
+        .add-task-btn {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.85rem;
+            color: #999;
+            background: none;
+            border: 2px dashed #ddd;
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s;
+        }
+
+        .add-task-btn:hover {
+            color: #666;
+            border-color: #bbb;
+        }
+
+        /* ===== Add Person Button ===== */
+        .add-person-area {
+            text-align: center;
+            margin-top: 8px;
+        }
+
+        .add-person-btn {
+            font-family: 'Sarabun', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #999;
+            background: #fff;
+            border: 2px dashed #ccc;
+            padding: 16px 32px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s;
+            width: 100%;
+            max-width: 900px;
+        }
+
+        .add-person-btn:hover {
+            color: #666;
+            border-color: #999;
+        }
+
+        /* ===== Overlay / hide controls for export ===== */
+        .export-hide {
+            /* will be hidden during export */
+        }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .schedule-table th,
+            .schedule-table td {
+                padding: 8px 4px;
+                font-size: 0.8rem;
+            }
+
+            .schedule-table th:first-child,
+            .schedule-table td:first-child {
+                padding-left: 10px;
+            }
+
+            .day-cell {
+                min-width: 40px;
+            }
+        }
+
+        /* ===== Print ===== */
+        @media print {
+            .toolbar, .export-hide, .add-person-area {
+                display: none !important;
+            }
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toolbar -->
+    <div class="toolbar export-hide">
+        <span class="toolbar-title" id="schedule-title" onclick="editTitle()">ตารางเวรงาน</span>
+        <div class="toolbar-actions">
+            <button class="btn btn-primary" onclick="addPerson()">+ เพิ่มสมาชิก</button>
+            <button class="btn btn-export" onclick="exportImage()">📷 บันทึกเป็นรูปภาพ</button>
+            <button class="btn btn-reset" onclick="resetData()">↺ รีเซ็ต</button>
+        </div>
+    </div>
+
+    <!-- Schedule Display (this area gets exported as image) -->
+    <div id="schedule-display"></div>
+
+    <!-- Add Person button -->
+    <div class="add-person-area export-hide" style="max-width:900px;margin:16px auto 0;">
+        <button class="add-person-btn" onclick="addPerson()">+ เพิ่มสมาชิกใหม่</button>
+    </div>
+
+    <script>
+    // ===== Constants =====
+    const DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    const DAY_LABELS = {
+        mon: 'จันทร์', tue: 'อังคาร', wed: 'พุธ',
+        thu: 'พฤหัสฯ', fri: 'ศุกร์', sat: 'เสาร์', sun: 'อาทิตย์'
+    };
+
+    const COLOR_PRESETS = [
+        { name: 'เขียว',   hex: '#4CAF50' },
+        { name: 'ม่วง',    hex: '#9C27B0' },
+        { name: 'ส้ม',     hex: '#FF9800' },
+        { name: 'น้ำเงิน', hex: '#2196F3' },
+        { name: 'ชมพู',    hex: '#E91E63' },
+        { name: 'ฟ้า',     hex: '#00BCD4' },
+        { name: 'แดง',     hex: '#F44336' },
+        { name: 'น้ำตาล',  hex: '#795548' },
+    ];
+
+    // ===== Data Layer (API) =====
+    let data = { title: 'ตารางเวรงาน', people: [] };
+
+    async function loadDataFromServer() {
+        try {
+            const res = await fetch('/api/schedule');
+            data = await res.json();
+        } catch (e) {
+            console.error('โหลดข้อมูลไม่สำเร็จ:', e);
+        }
+        render();
+    }
+
+    function saveData() {
+        fetch('/api/schedule', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).catch(e => console.error('บันทึกไม่สำเร็จ:', e));
+    }
+
+    function generateId() {
+        return 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+    }
+
+    // ===== Render =====
+    function render() {
+        const display = document.getElementById('schedule-display');
+        display.innerHTML = '';
+
+        // Update title
+        document.getElementById('schedule-title').textContent = data.title;
+
+        data.people.forEach((person, personIdx) => {
+            const card = document.createElement('div');
+            card.className = 'person-card';
+            card.innerHTML = buildCardHTML(person, personIdx);
+            display.appendChild(card);
+        });
+    }
+
+    function buildCardHTML(person, personIdx) {
+        const isFirst = personIdx === 0;
+        const isLast = personIdx === data.people.length - 1;
+
+        let html = '';
+
+        // Header
+        html += `<div class="card-header" style="background:${person.color}">`;
+        html += `<div class="card-header-badge">`;
+        html += `<span class="dot"></span>`;
+        html += `<span class="card-header-name" onclick="editPersonName(${personIdx})" id="person-name-${personIdx}">${escHtml(person.name)}</span>`;
+        html += `</div>`;
+        html += `<span class="card-header-spacer"></span>`;
+        html += `<div class="card-controls export-hide">`;
+        html += `<button class="btn-icon" onclick="openColorPicker(event, ${personIdx})" title="เปลี่ยนสี">🎨</button>`;
+        if (!isFirst) html += `<button class="btn-icon" onclick="movePerson(${personIdx}, -1)" title="เลื่อนขึ้น">↑</button>`;
+        if (!isLast) html += `<button class="btn-icon" onclick="movePerson(${personIdx}, 1)" title="เลื่อนลง">↓</button>`;
+        html += `<button class="btn-icon" onclick="deletePerson(${personIdx})" title="ลบ">✕</button>`;
+        html += `</div>`;
+        html += `</div>`;
+
+        // Table
+        html += `<table class="schedule-table">`;
+        html += `<thead><tr>`;
+        html += `<th>หน้าที่</th>`;
+        DAY_KEYS.forEach(d => {
+            html += `<th>${DAY_LABELS[d]}</th>`;
+        });
+        html += `</tr></thead>`;
+        html += `<tbody>`;
+
+        person.tasks.forEach((task, taskIdx) => {
+            html += `<tr class="task-row">`;
+            // Task name + time label
+            html += `<td>`;
+            html += `<span class="task-name" onclick="editTaskName(${personIdx}, ${taskIdx})" id="task-name-${personIdx}-${taskIdx}">${escHtml(task.name)}</span>`;
+            if (task.timeLabel) {
+                html += `<span class="task-time" onclick="editTimeLabel(${personIdx}, ${taskIdx})" id="time-label-${personIdx}-${taskIdx}">${escHtml(task.timeLabel)}</span>`;
+            } else {
+                html += `<span class="task-time export-hide" onclick="editTimeLabel(${personIdx}, ${taskIdx})" id="time-label-${personIdx}-${taskIdx}" style="color:#ccc;cursor:pointer;">+ เพิ่มคำอธิบาย</span>`;
+            }
+            html += `<button class="task-delete-btn export-hide" onclick="deleteTask(${personIdx}, ${taskIdx})" title="ลบหน้าที่">✕</button>`;
+            html += `</td>`;
+
+            // Day cells
+            DAY_KEYS.forEach(d => {
+                const dayData = task.days[d];
+                html += `<td class="day-cell" onclick="toggleDay(${personIdx}, ${taskIdx}, '${d}')">`;
+                if (dayData.active) {
+                    html += `<span class="day-check" style="color:${person.color}">✓</span>`;
+                    if (dayData.time) {
+                        html += `<span class="time-display" onclick="event.stopPropagation(); editDayTime(${personIdx}, ${taskIdx}, '${d}', this)">${escHtml(dayData.time)}</span>`;
+                    } else {
+                        html += `<span class="time-display export-hide" onclick="event.stopPropagation(); editDayTime(${personIdx}, ${taskIdx}, '${d}', this)" style="color:#ddd;">—</span>`;
+                    }
+                } else {
+                    html += `<span class="day-dash">—</span>`;
+                }
+                html += `</td>`;
+            });
+
+            html += `</tr>`;
+        });
+
+        // Add task row
+        html += `<tr class="add-task-row export-hide"><td colspan="${DAY_KEYS.length + 1}">`;
+        html += `<button class="add-task-btn" onclick="addTask(${personIdx})">+ เพิ่มหน้าที่</button>`;
+        html += `</td></tr>`;
+
+        html += `</tbody></table>`;
+
+        return html;
+    }
+
+    function escHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
+    // ===== Edit Title =====
+    function editTitle() {
+        const el = document.getElementById('schedule-title');
+        const current = data.title;
+        el.outerHTML = `<input class="toolbar-title-input" id="schedule-title-input" value="${escHtml(current)}" />`;
+        const input = document.getElementById('schedule-title-input');
+        input.focus();
+        input.select();
+
+        function save() {
+            const val = input.value.trim() || 'ตารางเวรงาน';
+            data.title = val;
+            saveData();
+            // Restore the span
+            input.outerHTML = `<span class="toolbar-title" id="schedule-title" onclick="editTitle()">${escHtml(val)}</span>`;
+        }
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') input.blur();
+            if (e.key === 'Escape') { input.value = current; input.blur(); }
+        });
+    }
+
+    // ===== Edit Person Name =====
+    function editPersonName(personIdx) {
+        const el = document.getElementById(`person-name-${personIdx}`);
+        const current = data.people[personIdx].name;
+        el.outerHTML = `<input class="card-header-name-input" id="person-name-input-${personIdx}" value="${escHtml(current)}" placeholder="ชื่อ" />`;
+        const input = document.getElementById(`person-name-input-${personIdx}`);
+        input.focus();
+        input.select();
+
+        function save() {
+            const val = input.value.trim() || 'ไม่มีชื่อ';
+            data.people[personIdx].name = val;
+            saveData();
+            render();
+        }
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') input.blur();
+            if (e.key === 'Escape') { input.value = current; input.blur(); }
+        });
+    }
+
+    // ===== Edit Task Name =====
+    function editTaskName(personIdx, taskIdx) {
+        const el = document.getElementById(`task-name-${personIdx}-${taskIdx}`);
+        const current = data.people[personIdx].tasks[taskIdx].name;
+        el.outerHTML = `<input class="task-name-input" id="task-name-input-${personIdx}-${taskIdx}" value="${escHtml(current)}" placeholder="ชื่อหน้าที่" />`;
+        const input = document.getElementById(`task-name-input-${personIdx}-${taskIdx}`);
+        input.focus();
+        input.select();
+
+        function save() {
+            const val = input.value.trim() || 'หน้าที่ใหม่';
+            data.people[personIdx].tasks[taskIdx].name = val;
+            saveData();
+            render();
+        }
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') input.blur();
+            if (e.key === 'Escape') { input.value = current; input.blur(); }
+        });
+    }
+
+    // ===== Edit Time Label (under task name) =====
+    function editTimeLabel(personIdx, taskIdx) {
+        const el = document.getElementById(`time-label-${personIdx}-${taskIdx}`);
+        const current = data.people[personIdx].tasks[taskIdx].timeLabel || '';
+        el.outerHTML = `<input class="task-name-input" id="time-label-input-${personIdx}-${taskIdx}" value="${escHtml(current)}" placeholder="เช่น เวลา 17:00–20:00 น." style="font-weight:400;font-size:0.8rem;width:180px;" />`;
+        const input = document.getElementById(`time-label-input-${personIdx}-${taskIdx}`);
+        input.focus();
+        input.select();
+
+        function save() {
+            data.people[personIdx].tasks[taskIdx].timeLabel = input.value.trim();
+            saveData();
+            render();
+        }
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') input.blur();
+            if (e.key === 'Escape') { input.value = current; input.blur(); }
+        });
+    }
+
+    // ===== Toggle Day =====
+    function toggleDay(personIdx, taskIdx, dayKey) {
+        const dayData = data.people[personIdx].tasks[taskIdx].days[dayKey];
+        dayData.active = !dayData.active;
+        if (!dayData.active) dayData.time = '';
+        saveData();
+        render();
+    }
+
+    // ===== Edit Day Time =====
+    function editDayTime(personIdx, taskIdx, dayKey, spanEl) {
+        const current = data.people[personIdx].tasks[taskIdx].days[dayKey].time || '';
+        spanEl.outerHTML = `<input class="time-input" id="day-time-input-${personIdx}-${taskIdx}-${dayKey}" value="${escHtml(current)}" placeholder="18:00–22:00" />`;
+        const input = document.getElementById(`day-time-input-${personIdx}-${taskIdx}-${dayKey}`);
+        input.focus();
+        input.select();
+
+        function save() {
+            data.people[personIdx].tasks[taskIdx].days[dayKey].time = input.value.trim();
+            saveData();
+            render();
+        }
+
+        input.addEventListener('blur', save);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') input.blur();
+            if (e.key === 'Escape') { input.value = current; input.blur(); }
+        });
+    }
+
+    // ===== Add/Delete Person =====
+    function addPerson() {
+        const name = prompt('ชื่อสมาชิกใหม่:');
+        if (!name || !name.trim()) return;
+
+        // Pick a color not already in use, or default
+        const usedColors = data.people.map(p => p.color);
+        const available = COLOR_PRESETS.find(c => !usedColors.includes(c.hex));
+        const color = available ? available.hex : COLOR_PRESETS[Math.floor(Math.random() * COLOR_PRESETS.length)].hex;
+
+        data.people.push({
+            id: generateId(),
+            name: name.trim(),
+            color: color,
+            tasks: [{
+                id: generateId(),
+                name: 'หน้าที่ใหม่',
+                timeLabel: '',
+                days: Object.fromEntries(DAY_KEYS.map(d => [d, { active: false, time: '' }]))
+            }]
+        });
+        saveData();
+        render();
+    }
+
+    function deletePerson(personIdx) {
+        const name = data.people[personIdx].name;
+        if (!confirm(`ลบ "${name}" ออกจากตาราง?`)) return;
+        data.people.splice(personIdx, 1);
+        saveData();
+        render();
+    }
+
+    function movePerson(personIdx, direction) {
+        const newIdx = personIdx + direction;
+        if (newIdx < 0 || newIdx >= data.people.length) return;
+        const temp = data.people[personIdx];
+        data.people[personIdx] = data.people[newIdx];
+        data.people[newIdx] = temp;
+        saveData();
+        render();
+    }
+
+    // ===== Add/Delete Task =====
+    function addTask(personIdx) {
+        data.people[personIdx].tasks.push({
+            id: generateId(),
+            name: 'หน้าที่ใหม่',
+            timeLabel: '',
+            days: Object.fromEntries(DAY_KEYS.map(d => [d, { active: false, time: '' }]))
+        });
+        saveData();
+        render();
+    }
+
+    function deleteTask(personIdx, taskIdx) {
+        if (data.people[personIdx].tasks.length <= 1) {
+            alert('ต้องมีหน้าที่อย่างน้อย 1 รายการ');
+            return;
+        }
+        data.people[personIdx].tasks.splice(taskIdx, 1);
+        saveData();
+        render();
+    }
+
+    // ===== Color Picker =====
+    let colorPickerEl = null;
+
+    function openColorPicker(event, personIdx) {
+        event.stopPropagation();
+        closeColorPicker();
+
+        const popup = document.createElement('div');
+        popup.className = 'color-picker-popup';
+        popup.id = 'color-picker-popup';
+
+        COLOR_PRESETS.forEach(c => {
+            const swatch = document.createElement('div');
+            swatch.className = 'color-swatch' + (data.people[personIdx].color === c.hex ? ' active' : '');
+            swatch.style.background = c.hex;
+            swatch.title = c.name;
+            swatch.onclick = (e) => {
+                e.stopPropagation();
+                data.people[personIdx].color = c.hex;
+                saveData();
+                render();
+                closeColorPicker();
+            };
+            popup.appendChild(swatch);
+        });
+
+        // Position near button
+        const rect = event.target.getBoundingClientRect();
+        popup.style.top = (rect.bottom + window.scrollY + 4) + 'px';
+        popup.style.left = (rect.left + window.scrollX - 80) + 'px';
+
+        document.body.appendChild(popup);
+        colorPickerEl = popup;
+
+        // Close on outside click
+        setTimeout(() => {
+            document.addEventListener('click', closeColorPickerOnOutside);
+        }, 10);
+    }
+
+    function closeColorPicker() {
+        if (colorPickerEl) {
+            colorPickerEl.remove();
+            colorPickerEl = null;
+        }
+        document.removeEventListener('click', closeColorPickerOnOutside);
+    }
+
+    function closeColorPickerOnOutside(e) {
+        if (colorPickerEl && !colorPickerEl.contains(e.target)) {
+            closeColorPicker();
+        }
+    }
+
+    // ===== Reset Data =====
+    async function resetData() {
+        if (!confirm('รีเซ็ตข้อมูลทั้งหมดเป็นค่าเริ่มต้น?')) return;
+        try {
+            const res = await fetch('/api/reset', { method: 'POST' });
+            data = await res.json();
+        } catch (e) {
+            console.error('รีเซ็ตไม่สำเร็จ:', e);
+        }
+        render();
+    }
+
+    // ===== Export as Image =====
+    async function exportImage() {
+        const btn = event.target.closest('.btn');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '⏳ กำลังสร้างรูป...';
+        btn.disabled = true;
+
+        // Hide edit controls
+        const hideEls = document.querySelectorAll('.export-hide');
+        hideEls.forEach(el => el.style.display = 'none');
+
+        // Add title for export
+        const display = document.getElementById('schedule-display');
+        const titleDiv = document.createElement('div');
+        titleDiv.id = 'export-title';
+        titleDiv.style.cssText = 'text-align:center;font-size:1.8rem;font-weight:700;padding:16px 0 8px;color:#333;';
+        titleDiv.textContent = data.title;
+        display.insertBefore(titleDiv, display.firstChild);
+
+        try {
+            // Wait a frame for fonts
+            await new Promise(r => setTimeout(r, 100));
+
+            const canvas = await html2canvas(display, {
+                scale: 2,
+                backgroundColor: '#FFF8F0',
+                useCORS: true,
+                logging: false,
+            });
+
+            const link = document.createElement('a');
+            link.download = (data.title || 'ตารางเวรงาน') + '.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (err) {
+            alert('เกิดข้อผิดพลาดในการสร้างรูปภาพ: ' + err.message);
+        }
+
+        // Cleanup
+        titleDiv.remove();
+        hideEls.forEach(el => el.style.display = '');
+        btn.innerHTML = origText;
+        btn.disabled = false;
+    }
+
+    // ===== Init =====
+    loadDataFromServer();
+    </script>
+</body>
+</html>
